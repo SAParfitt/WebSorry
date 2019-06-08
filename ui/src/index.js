@@ -2,62 +2,59 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
+const TYPE = 0;
+const SP = 0; //Space
+const SL = 1; //Slide
+const SF = 2; //Safety
+const HO = 3; //Home
+const ST = 4; //Start
+const BK = 5; //BKank
+const HI = 6; //Hidden
+
+const COLOR = 1;
+const YE = 0; //Yellow
+const GR = 1; //Green
+const RD = 2; //Red
+const BL = 3; //Blue
 const colors = ['yellow', 'green', 'red', 'blue'];
-const symbols = ['&#x25b6;', '&#x25ad;', '&#x25ef;'];
-
-function cell(color, symbol) {
-  return {
-    color: color,
-    symbol: symbol,
-  };
-}
-
-function safety(color) {
-  return {
-    color: color,
-    safety: true,
-  };
-}
-
-function home(color) {
-  return {
-    color: color,
-    home: true,
-  };
-}
-
-function start(color) {
-  return {
-    color: color,
-    start: true,
-  };
-}
-
-function space(length) {
-  return {
-    color: 'space',
-    space: length,
-  };
-}
 
 const boardLayout = [
-  [cell(0), cell(0), cell(0), cell(0), cell(0), cell(0), cell(0), cell(0), cell(0), cell(0), cell(0), cell(0), cell(0), cell(0), cell(0), cell(1)],
-  [cell(3), space(1), safety(0), start(0), space(1), home(1), space(5), cell(1)],
-  [cell(3), space(1), safety(0), space(1), safety(1), safety(1), safety(1), safety(1), safety(1), cell(1)],
-  [cell(3), space(1), safety(0), space(1), space(2), start(1), cell(1)],
-
+  [[SP, YE], [SL, YE], [SL, YE], [SL, YE], [SL, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, GR]],
+  [[SP, BL], [BK, BK], [SF, YE], [ST, YE], [HI, BK], [HI, BK], [BK, BK], [HO, GR], [HI, BK], [HI, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [SP, GR]],
+  [[SP, BL], [BK, BK], [SF, YE], [HI, BK], [HI, BK], [HI, BK], [BK, BK], [HI, BK], [HI, BK], [HI, BK], [SF, GR], [SF, GR], [SF, GR], [SF, GR], [SF, GR], [SP, GR]],
+  [[SP, BL], [BK, BK], [SF, YE], [HI, BK], [HI, BK], [HI, BK], [BK, BK], [HI, BK], [HI, BK], [HI, BK], [BK, BK], [BK, BK], [ST, GR], [HI, BK], [HI, BK], [SP, GR]],
+  [[SP, BL], [BK, BK], [SF, YE], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [HI, BK], [HI, BK], [HI, BK], [SP, GR]],
+  [[SP, BL], [BK, BK], [SF, YE], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [HI, BK], [HI, BK], [HI, BK], [SP, GR]],
+  [[SP, BL], [HO, YE], [HI, BK], [HI, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [SP, GR]],
+  [[SP, BL], [HI, BK], [HI, BK], [HI, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [ST, RD], [HI, BK], [HI, BK], [SP, GR]],
+  [[SP, BL], [HI, BK], [HI, BK], [HI, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [HI, BK], [HI, BK], [HI, BK], [SP, GR]],
+  [[SP, BL], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [HI, BK], [HI, BK], [HI, BK], [SP, GR]],
+  [[SP, BL], [ST, BL], [HI, BK], [HI, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [SF, RD], [BK, BK], [SP, GR]],
+  [[SP, BL], [HI, BK], [HI, BK], [HI, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [SF, RD], [BK, BK], [SP, GR]],
+  [[SP, BL], [HI, BK], [HI, BK], [HI, BK], [BK, BK], [BK, BK], [HO, BL], [HI, BK], [HI, BK], [BK, BK], [HO, RD], [HI, BK], [HI, BK], [SF, RD], [BK, BK], [SP, GR]],
+  [[SP, BL], [SF, BL], [SF, BL], [SF, BL], [SF, BL], [SF, BL], [HI, BK], [HI, BK], [HI, BK], [BK, BK], [HI, BK], [HI, BK], [HI, BK], [SF, RD], [BK, BK], [SP, GR]],
+  [[SP, BL], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [BK, BK], [HI, BK], [HI, BK], [HI, BK], [BK, BK], [HI, BK], [HI, BK], [HI, BK], [SF, RD], [BK, BK], [SP, GR]],
+  [[SP, BL], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD]]
 ];
 
 
 function Square(props) {
-  let info = boardLayout[props.x][props.y];
+  let cell = boardLayout[props.x][props.y];
 
-  if (info.space) {
-    return (<td className="space" colspan={info.space}/>);
-  } else if (info.start || info.home) {
-    return (<td className={colors[info.color] + ' home'} colspan="3" rowspan="3" onClick={()=> props.onClick(props.x, props.y)} />);
-  } else {
-    return (<td className={colors[info.color]} onClick={()=> props.onClick(props.x, props.y)} />);
+  switch (cell[TYPE]) {
+    case SP:
+    case SL:
+    case SF:
+      return (<td className={colors[cell[COLOR]]} onClick={()=> props.onClick(props.x, props.y)}/>);
+    case HO:
+    case ST:
+      return (<td className={colors[cell[COLOR]] + ' home'} colspan = "3" rowspan = "3" onClick={()=> props.onClick(props.x, props.y)}/>);
+    case BK:
+      return (<td className="blank"/>);
+    case HI:
+      return null;
+    default:
+      return (<td/>);
   }
 
 }

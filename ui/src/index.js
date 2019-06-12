@@ -8,7 +8,7 @@ const SL = 1; //Slide
 const SF = 2; //Safety
 const HO = 3; //Home
 const ST = 4; //Start
-const BK = 5; //BKank
+const BK = 5; //Blank
 const HI = 6; //Hidden
 
 const COLOR = 1;
@@ -37,18 +37,45 @@ const boardLayout = [
   [[SP, BL], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD]]
 ];
 
+class GameState {
+  constructor() {
+    this.players = {};
+    this.players.red = [{x: 0, y: 0}, {x: 0, y: 10}, {x: 4, y: 0}];
+    this.players.yellow = [{x: 0, y: 3}, {x: 1, y: 3}];
+  }
+
+  getPawn(x, y) {
+    for (let player in this.players) {
+      for (let pawn of this.players[player]) {
+        if (pawn.x === x && pawn.y === y) {
+          return player;
+        }
+      }
+    }
+    return null;
+  }
+}
+
+const theGame = new GameState();
 
 function Square(props) {
   let cell = boardLayout[props.x][props.y];
+
+  let pawn = '';
+  let pawnColor = theGame.getPawn(props.x, props.y);
+  if (pawnColor) {
+    pawn = (<div class={'pawn ' + pawnColor}>&#9823;</div>);
+  }
 
   switch (cell[TYPE]) {
     case SP:
     case SL:
     case SF:
-      return (<td className={colors[cell[COLOR]]} onClick={()=> props.onClick(props.x, props.y)}/>);
+      return (<td className={colors[cell[COLOR]]} onClick={()=> props.onClick(props.x, props.y)}>{pawn}</td>);
     case HO:
     case ST:
-      return (<td className={colors[cell[COLOR]] + ' home'} colspan = "3" rowspan = "3" onClick={()=> props.onClick(props.x, props.y)}/>);
+      //return (<td className={colors[cell[COLOR]] + ' home'} colspan = "3" rowspan = "3" onClick={()=> props.onClick(props.x, props.y)}>{pawn}</td>);
+      return (<td className={colors[cell[COLOR]] + ' home'} colspan = "3" rowspan = "3" onClick={()=> props.onClick(props.x, props.y)}><div class="pawn yellow">&#9823;&#9823;&#9823;&#9823;</div></td>);
     case BK:
       return (<td className="blank"/>);
     case HI:
@@ -58,7 +85,6 @@ function Square(props) {
   }
 
 }
-
 
 class GameBoard extends React.Component {
 

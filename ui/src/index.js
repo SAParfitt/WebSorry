@@ -16,7 +16,9 @@ const YE = 0; //Yellow
 const GR = 1; //Green
 const RD = 2; //Red
 const BL = 3; //Blue
-const colors = ['yellow', 'green', 'red', 'blue'];
+const COLORS = ['yellow', 'green', 'red', 'blue'];
+
+const PAWNCHAR = '\u265F';
 
 const boardLayout = [
   [[SP, YE], [SL, YE], [SL, YE], [SL, YE], [SL, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, YE], [SP, GR]],
@@ -37,23 +39,47 @@ const boardLayout = [
   [[SP, BL], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD]]
 ];
 
+const STARTCELLS  = [{x: 1, y: 3}, {x: 3, y: 12}, {x: 12, y:10}, {x: 10, y: 1}];
+const HOMECELLS   = [{x: 6,  y: 1}, {x: 1,  y: 7}, {x: 7,  y: 12}, {x: 12, y: 6}];
+
 class GameState {
   constructor() {
     this.players = {};
-    this.players.red = [{x: 0, y: 0}, {x: 0, y: 10}, {x: 4, y: 0}];
-    this.players.yellow = [{x: 0, y: 3}, {x: 1, y: 3}];
+    this.players.yellow = [{x: 1, y: 3}, {x: 1, y: 3}];
+    this.players.green = [{x: 3, y: 12}];
+    this.players.red = [{x: 12, y:10}, {x: 0, y: 0}];
+    this.players.blue = [{x: 10, y: 1}];
   }
 
-  getPawn(x, y) {
+  getPawnDetails(x, y) {
+    let color = null;
+    let count = 0;
     for (let player in this.players) {
       for (let pawn of this.players[player]) {
         if (pawn.x === x && pawn.y === y) {
-          return player;
+          count++;
+          color = player;
         }
       }
     }
-    return null;
+    return ({
+      color: color,
+      count: count,
+    });
   }
+
+  advancePawn(x, y) {
+
+    for (let player in this.players) {
+      for (let pawn of this.players[player]) {
+        if (pawn.x === x && pawn.y === y) {
+          break;  //only handle the first pawn in Start and Home spaces
+        }
+      }
+    }
+    return;
+  }
+
 }
 
 const theGame = new GameState();
@@ -61,21 +87,35 @@ const theGame = new GameState();
 function Square(props) {
   let cell = boardLayout[props.x][props.y];
 
-  let pawn = '';
-  let pawnColor = theGame.getPawn(props.x, props.y);
+  let pawnDiv = '';
+  let pawnChars = '';
+  let thisPawn = theGame.getPawnDetails(props.x, props.y);
+  let pawnColor = thisPawn.color;
+  let pawnCount = thisPawn.count;
   if (pawnColor) {
-    pawn = (<div class={'pawn ' + pawnColor}>&#9823;</div>);
+    for (let i = 0; i < pawnCount; i++) {
+      pawnChars += PAWNCHAR;
+    }
+      pawnDiv = (<div class={'pawn ' + pawnColor}>{pawnChars}</div>);
   }
 
   switch (cell[TYPE]) {
     case SP:
     case SL:
     case SF:
-      return (<td className={colors[cell[COLOR]]} onClick={()=> props.onClick(props.x, props.y)}>{pawn}</td>);
+      if (pawnColor) {
+        return (<td className={COLORS[cell[COLOR]]} onClick={()=> props.onClick(props.x, props.y)}>{pawnDiv}</td>);
+      } else {
+        return (<td className={COLORS[cell[COLOR]]}>{pawnDiv}</td>);
+      }
     case HO:
+      return (<td className={COLORS[cell[COLOR]] + ' home'} colspan = "3" rowspan = "3">{pawnDiv}</td>);
     case ST:
-      //return (<td className={colors[cell[COLOR]] + ' home'} colspan = "3" rowspan = "3" onClick={()=> props.onClick(props.x, props.y)}>{pawn}</td>);
-      return (<td className={colors[cell[COLOR]] + ' home'} colspan = "3" rowspan = "3" onClick={()=> props.onClick(props.x, props.y)}><div class="pawn yellow">&#9823;&#9823;&#9823;&#9823;</div></td>);
+      if (pawnColor) {
+        return (<td className={COLORS[cell[COLOR]] + ' home'} colspan = "3" rowspan = "3" onClick={()=> props.onClick(props.x, props.y)}>{pawnDiv}</td>);
+      } else {
+        return (<td className={COLORS[cell[COLOR]] + ' home'} colspan = "3" rowspan = "3">{pawnDiv}</td>);
+      };
     case BK:
       return (<td className="blank"/>);
     case HI:
@@ -83,17 +123,17 @@ function Square(props) {
     default:
       return (<td/>);
   }
-
 }
 
 class GameBoard extends React.Component {
 
   handleClick(x, y){
-    alert('Click from ' + x + ', ' + y);
+    theGame.advancePawn(x, y);
+    this.render();
   }
 
   render() {
-
+    alert('RENDER');
     let rows = [];
 
     for (let x = 0; x < boardLayout.length; x++)
@@ -114,6 +154,7 @@ class GameBoard extends React.Component {
     return (<table>{rows}</table>);
 
   }
+
 }
 
 ReactDOM.render(

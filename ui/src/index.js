@@ -6,7 +6,7 @@ const TYPE = 0;
 const SP = 0; //Normal Space
 const ST = 1; //Start Space
 const S3 = 2; //Slide Three Spaces
-const S5 = 3; //Slide Two Spaces
+const S5 = 3; //Slide Five Spaces
 const EN = 4; //Entrance
 const SF = 5; //Safety
 const FS = 6; //Final Safety
@@ -42,136 +42,157 @@ const boardLayout = [
   [[SP, BL], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [S5, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [SP, RD], [EN, RD], [S3, RD], [SP, RD]]
 ];
 
+class GameState extends React.Component{
 
-class GameState {
-
-  constructor(copy) {
-    if (copy) {
-      this.players = copy.players.slice();
-    } else {
-      this.players = [];
-      this.players[YE] = [{row: 1,  col: 3 }, {row: 1,  col: 3 }, {row: 1,  col: 3 }, {row: 1,  col: 3 }];
-      this.players[GR] = [{row: 3,  col: 12}, {row: 3,  col: 12}, {row: 3,  col: 12}, {row: 3,  col: 12}];
-      this.players[RD] = [{row: 12, col: 10}, {row: 12, col: 10}, {row: 12, col: 10}, {row: 12, col: 10}];
-      this.players[BL] = [{row: 10, col: 1 }, {row: 10, col: 1 }, {row: 10, col: 1 }, {row: 10, col: 1 }];
-    }
+  constructor() {
+    super();
+    this.players = [new Player(YE), new Player(GR), new Player(RD), new Player(BL)];
+    this.deck = new Deck();
+    this.board = new GameBoard(this.players);
+    this.play();
   }
 
-  getPawnDetails(row, col) {
-    let color = null;
-    let count = 0;
-    for (let player in this.players) {
-      for (let pawn of this.players[player]) {
-        if (pawn.row === row && pawn.col === col) {
-          count++;
-          color = player;
-        }
-      }
-    }
-    return ({
-      color: color,
-      count: count,
-    });
+  play() {
+    let card = this.deck.draw();
+    console.log(card.label + " " + card.desc);
   }
 
-  advancePawn(row, col, count) {
+  render() {
+    let rows = [];
+    for (let row = 0; row < boardLayout.length; row++)
+    {
+      let cells = [];
 
-    if (count === 0 ){
-      return;
-    }
-
-    let moveMade = false;
-    for (let player = 0; player < this.players.length; player++) {
-      for (let pawn of this.players[player]) {
-        if (pawn.row === row && pawn.col === col) {
-          // There is a pawn at this location
-          let cell = boardLayout[row][col]
-
-          if (cell[TYPE] === ST && cell[COLOR] === player) {
-            // Pawn is in a Start Cell
-            switch (player){
-              case YE:
-                row = 0;
-                col = 4;
-                break;
-              case GR:
-                row = 4;
-                col = 15;
-                break;
-              case RD:
-                row = 15;
-                col = 11
-                break;
-              case BL:
-                row = 11;
-                col = 0;
-                break;
-            }
-          } else if ( (
-              cell[TYPE] === EN ||
-              cell[TYPE] === SF )
-              && cell[COLOR] === player) {
-            // Pawn is at the entrance to or in a Safety Zone
-            switch (player){
-              case YE:
-                row++;
-                break;
-              case GR:
-                col--;
-                break;
-              case RD:
-                row--;
-                break;
-              case BL:
-                col++;
-                break;
-            }
-          } else if (cell[TYPE] === FS && cell[COLOR] === player) {
-            // Pawn is in at the end of the Safety Zone
-            switch (player){
-              case YE:
-                row = 6;
-                col = 1;
-                break;
-              case GR:
-                row = 1;
-                col = 7;
-                break;
-              case RD:
-                row = 7;
-                col = 12;
-                break;
-              case BL:
-                row = 12;
-                col = 6;
-                break;
-            }
-          } else if (pawn.row === 0 && pawn.col < 15){
-            // Yellow path
-            col++;
-          } else if (pawn.col === 15 && pawn.row < 15){
-            // Green path
-            row++;
-          } else if (pawn.row === 15 && pawn.col > 0){
-            // Red path
-            col--;
-          } else if (pawn.col === 0 && pawn.row > 0){
-            // Blue path
-            row--;
-          }
-
-          // In the case of a Start Space, there may be multiple pawns.
-          // Do not handle more than one pawn.
-          moveMade = true;
-          pawn.col = col;
-          pawn.row = row;
-          count--;
-          break;
-        }
+      for (let col = 0; col < boardLayout[row].length; col++) {
+        cells.push(<Square
+          row={row}
+          col={col}
+          onClick={(row,col) => this.handleClick(row,col)}/>
+        );
       }
-      if (moveMade) break;
+      rows[row] = (<tr>{cells}</tr>);
     }
-    return this.advancePawn(row, col, count);
+    return (<table><tbody>{rows}</tbody></table>);
+  }
+
+}
+
+class Pawn {
+
+  constructor(row, col, player) {
+    this.row = row;
+    this.col = col;
+    this.player = player;
+  }
+
+}
+
+class Player {
+
+  constructor(player)
+  {
+    this.player = player;
+    this.pawns = [];
+    this.startRow = -1;
+    this.startCol = -1;
+
+    switch (player) {
+      case YE:
+      this.startRow = 1;
+      this.startCol = 3;
+      break;
+      case GR:
+      this.startRow = 3;
+      this.startCol = 12;
+      break;
+      case RD:
+      this.startRow = 12;
+      this.startCol = 10;
+      break;
+      case BL:
+      this.startRow = 10;
+      this.startCol = 1;
+      break;
+    }
+
+    for (let pawn = 0; pawn < 4; pawn++) {
+      this.pawns.push(new Pawn(this.startRow, this.startCol, this.player));
+    }
+
+  }
+
+  pawnInStart() {
+
+    let pawnList = [];
+
+    for (let pawn of this.pawns) {
+      if (pawn.col === this.startCol && pawn.row === this.startRow) {
+        return pawn;
+      }
+    }
+    return;
+  }
+}
+
+class Card {
+
+  constructor(label, desc) {
+    this.label = label;
+    this.desc = desc;
+  }
+
+}
+
+class MoveCard extends Card {
+  constructor(count) {
+    super(count, 'Move forward ' + count + '.');
+  }
+}
+
+class Deck {
+
+  draw() {
+    // If the deck is empty, shuffle a new deck
+    if (!this.cards) {
+      this.shuffle();
+    }
+
+    // Return the last card in the deck and remove it
+    return this.cards.pop();
+  }
+
+  shuffle() {
+    this.cards = [];
+
+    // Create base deck
+    for (let i = 0; i < 4; i++) {
+      //this.cards.push(new Card(1, 'Move from Start of move forward 1.'));
+      //this.cards.push(new Card(2, 'Move from Start or move forward 2. DRAW AGAIN.'));
+      this.cards.push(new MoveCard(3));
+      //this.cards.push(new Card(4, 'Move backward 4.'));
+      //this.cards.push(new MoveCard(5));
+      this.cards.push(new Card(7, 'Move forward 7 or split between two pawns.'));
+      //this.cards.push(new MoveCard(8));
+      //this.cards.push(new Card(10, 'Move forward 10 or move backward 1.'));
+      //this.cards.push(new Card(11, 'Move forward 11 or change places with an opponent.'));
+      //this.cards.push(new MoveCard(12));
+      //this.cards.push(new Card('Sorry', 'Move from Start and switch places with an opponent, whom you bump back to Start.'));
+    }
+
+    // Shuffle deck using Modern Fisher-Yetes algorithm
+    function randomIndex(min, max) {
+      return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    let end = this.cards.length;
+    for (let x = 0; x < end - 1; x++) {
+      let index = randomIndex(x, end);
+      if (x != index) {
+        // Swap
+        [this.cards[x], this.cards[index]] = [this.cards[index], this.cards[x]];
+      }
+    }
+
   }
 
 }
@@ -181,14 +202,14 @@ function Square(props) {
 
   let pawnDiv = '';
   let pawnChars = '';
-  let thisPawn = props.gameState.getPawnDetails(props.row, props.col);
+  let thisPawn = new Pawn();
   let pawnColor = COLORS[thisPawn.color];
   let pawnCount = thisPawn.count;
   if (pawnColor) {
     for (let i = 0; i < pawnCount; i++) {
       pawnChars += PAWNCHAR;
     }
-      pawnDiv = (<div className={'pawn ' + pawnColor}>{pawnChars}</div>);
+    pawnDiv = (<div className={'pawn ' + pawnColor}>{pawnChars}</div>);
   }
 
   switch (cell[TYPE]) {
@@ -204,40 +225,55 @@ function Square(props) {
     case SF:
     // Final Safety
     case FS:
-      if (pawnColor) {
-        return (<td className={COLORS[cell[COLOR]]} onClick={()=> props.onClick(props.row, props.col)}>{pawnDiv}</td>);
-      } else {
-        return (<td className={COLORS[cell[COLOR]]}>{pawnDiv}</td>);
-      }
+    if (pawnColor) {
+      return (<td className={COLORS[cell[COLOR]]} onClick={()=> props.onClick(props.row, props.col)}>{pawnDiv}</td>);
+    } else {
+      return (<td className={COLORS[cell[COLOR]]}>{pawnDiv}</td>);
+    }
     // Home
     case HO:
-      return (<td className={COLORS[cell[COLOR]] + ' home'} colSpan = "3" rowSpan = "3">{pawnDiv}</td>);
+    return (<td className={COLORS[cell[COLOR]] + ' home'} colSpan = "3" rowSpan = "3">{pawnDiv}</td>);
     // Start
     case ST:
-      if (pawnColor) {
-        return (<td className={COLORS[cell[COLOR]] + ' home'} colSpan = "3" rowSpan = "3" onClick={()=> props.onClick(props.row, props.col)}>{pawnDiv}</td>);
-      } else {
-        return (<td className={COLORS[cell[COLOR]] + ' home'} colSpan = "3" rowSpan = "3">{pawnDiv}</td>);
-      };
+    if (pawnColor) {
+      return (<td className={COLORS[cell[COLOR]] + ' home'} colSpan = "3" rowSpan = "3" onClick={()=> props.onClick(props.row, props.col)}>{pawnDiv}</td>);
+    } else {
+      return (<td className={COLORS[cell[COLOR]] + ' home'} colSpan = "3" rowSpan = "3">{pawnDiv}</td>);
+    };
     // Blank
     case BK:
-      return (<td className="blank"/>);
+    return (<td className="blank"/>);
     // Hidden
     case HI:
-      // Hidden cells are behind Home and Start cells. Do not render these.
-      return null;
+    // Hidden cells are behind Home and Start cells. Do not render these.
+    return null;
     default:
-      return (<td/>);
+    return (<td/>);
   }
 }
 
 class GameBoard extends React.Component {
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      gameState : new GameState(),
-    };
+  constructor(players) {
+    super(players);
+    this.current = [];
+    for (let row = 0; row < 16; row++) {
+      let cols = [];
+      for (let col = 0; col < 16; col++) {
+        let pawns = [];
+        for (let player of players) {
+          for (let pawn of player.pawns) {
+            if (pawn.row === row && pawn.col === col) {
+              pawns.push(pawn);
+              console.log("Pawn @ " + row + "," + col);
+            }
+          }
+        }
+        cols.push(pawns);
+      }
+      this.current.push(cols);
+    }
+    console.log(this.current);
   }
 
   handleClick(row, col){
@@ -250,32 +286,11 @@ class GameBoard extends React.Component {
   }
 
   render() {
-    //console.log(this.state.gameState);
-    let rows = [];
-
-    for (let row = 0; row < boardLayout.length; row++)
-    {
-      let cells = [];
-
-      for (let col = 0; col < boardLayout[row].length; col++) {
-        cells.push(<Square
-          gameState={this.state.gameState}
-          row={row}
-          col={col}
-          onClick={(row,col) => this.handleClick(row,col)}/>
-          );
-      }
-
-      rows[row] = (<tr>{cells}</tr>);
-    }
-
-    return (<table><tbody>{rows}</tbody></table>);
-
   }
 
 }
 
 ReactDOM.render(
-  <GameBoard />,
+  <GameState />,
   document.getElementById('root')
 );

@@ -32,6 +32,16 @@ td.home {
 	border-radius: 100px;
 }
 
+td.movefrom {
+	border-width: 3px;
+	border-color: orange;
+}
+
+td.moveto {
+	border-width: 3px;
+	border-color: green;
+}
+
 .pawn {
 	font-family: 'Arial Unicode MS';
 	font-size: 2em;

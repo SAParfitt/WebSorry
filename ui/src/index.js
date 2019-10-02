@@ -46,16 +46,20 @@ const BOARDLAYOUT = [
 ];
 
 const PLAYERCOORDS = [
-  [1,3,6,2,0,3],
-  [3,12,2,7,3,15],
-  [12,10,7,12,15,12],
-  [10,1,12,6,12,0]
+  [1,3,6,1,0,4],
+  [3,12,2,7,4,15],
+  [12,10,7,12,15,11],
+  [10,1,12,6,11,0]
 ];
+
+const ROW = 0;
+const COL = 1;
+const ADTNL = 2;
 
 const MOVEFROM = ' movefrom';
 const MOVETO = ' moveto';
 
-class GameState extends React.Component{
+class GameState extends React.Component {
 
   constructor() {
     super();
@@ -69,7 +73,7 @@ class GameState extends React.Component{
 
   nextTurn() {
     for (let player of this.players) {
-      if (player.pawnsInHome() === 4) {
+      if (player.pawnsInHome().length === 4) {
         player.wins();
         this.gameOver = true;
       }
@@ -103,7 +107,7 @@ class GameState extends React.Component{
       for (let pawn of player.pawnsInStart()) {
         let endpoint = this.pawnForward(pawn.row, pawn.col, 1);
         if (endpoint) {
-          actionList.push(new Action(pawn, endpoint[0], endpoint[1]))
+          actionList.push(new Action(pawn, endpoint[ROW], endpoint[COL], endpoint[ADTNL]));
         }
         break; // Only move ONE pawn from Start!
       }
@@ -112,7 +116,7 @@ class GameState extends React.Component{
       for (let pawn of player.pawnsInPlay()) {
         let endpoint = this.pawnForward(pawn.row, pawn.col, card.count);
         if (endpoint) {
-          actionList.push(new Action(pawn, endpoint[0], endpoint[1]))
+            actionList.push(new Action(pawn, endpoint[ROW], endpoint[COL], endpoint[ADTNL]));
         }
       }
     }
@@ -120,7 +124,7 @@ class GameState extends React.Component{
       for (let pawn of player.pawnsInPlay()) {
         let endpoint = this.pawnBackward(pawn.row, pawn.col, card.count);
         if (endpoint) {
-          actionList.push(new Action(pawn, endpoint[0], endpoint[1]))
+          actionList.push(new Action(pawn, endpoint[ROW], endpoint[COL], endpoint[ADTNL]));
         }
       }
     }
@@ -136,29 +140,53 @@ class GameState extends React.Component{
 
     if (count === 0 ) {
       let pawnsHere = this.board.getPawnList(row, col);
-      if (pawnsHere.length > 0) {
+      if (cell[TYPE] === HO) {
+        return [row, col, null, null];
+      } else if (pawnsHere.length > 0) {
         // On the final space, check if there are any pawns
-        if (pawnsHere[0].player = this.currentPlayer) {
+        if (pawnsHere[0].player === this.currentPlayer) {
           // Cannot play onto one's own pawn
+          console.log('Cannot end on one\'s own pawn.');
           return null;
         } else {
-          return [row, col];
+          // "Sorry": Send opponent's pawn back to their Start
+          console.log('Sorry.')
+          let sorryPawn = pawnsHere[0];
+          let sorryPlayer = sorryPawn.player;
+          return [row, col, new Action(sorryPawn, PLAYERCOORDS[sorryPlayer][0], PLAYERCOORDS[sorryPlayer][1]), null];
         }
       } else if (cell[TYPE] === S3){
         // Is this a slide 3 space?
         if (row === 0 && col < 15){
           // Yellow path
-          col+=3;
+          if (this.currentPlayer === YE) {
+            return [row, col, null, null];
+          } else {
+            col+=3;
+          }
         } else if (col === 15 && row < 15){
           // Green path
-          row+=3;
+          if (this.currentPlayer === GR) {
+            return [row, col, null, null];
+          } else {
+            row+=3;
+          }
         } else if (row === 15 && col > 0){
           // Red path
-          col-=3;
+          if (this.currentPlayer === RD) {
+            return [row, col, null, null];
+          } else {
+            col-=3;
+          }
         } else if (col === 0 && row > 0){
           // Blue path
-          row-=3;
+          if (this.currentPlayer === BL) {
+            return [row, col, null, null];
+          } else {
+            row-=3;
+          }
         }
+        return this.pawnForward(row, col, 0);
       } else if (cell[TYPE] === S5){
         // Is this a slide 5 space?
         if (row === 0 && col < 15){
@@ -174,16 +202,17 @@ class GameState extends React.Component{
           // Blue path
           row-=5;
         }
+        return this.pawnForward(row, col, 0);
+      } else {
+        return [row, col, null, null];
       }
-      return [row, col];
     }
 
 
     if (cell[TYPE] === ST) {
       row = PLAYERCOORDS[this.currentPlayer][4];
       col = PLAYERCOORDS[this.currentPlayer][5];
-    }
-    if ( cell[TYPE] === EN || cell[TYPE] === SF ) {
+    } else if ( cell[TYPE] === EN || cell[TYPE] === SF ) {
       // Pawn is at the entrance to or in a Safety Zone
       switch (this.currentPlayer) {
         case YE:
@@ -222,15 +251,19 @@ class GameState extends React.Component{
       }
     } else if (row === 0 && col < 15){
       // Yellow path
+      //console.log("Yellow Path");
       col++;
     } else if (col === 15 && row < 15){
       // Green path
+      //console.log("Green Path");
       row++;
     } else if (row === 15 && col > 0){
       // Red path
+      //console.log("Red Path");
       col--;
     } else if (col === 0 && row > 0){
       // Blue path
+      //console.log("Blue Path");
       row--;
     }
 
@@ -358,6 +391,11 @@ class GameState extends React.Component{
       if (action.pawn.row === row && action.pawn.col === col) {
         action.pawn.row = action.endRow;
         action.pawn.col = action.endCol;
+        let followup = action.followup();
+        if (followup) {
+          followup.pawn.row = followup.endRow;
+          followup.pawn.col = followup.endCol;
+        }
       }
     }
     this.board.rebuildBoard(this.players);
@@ -407,7 +445,7 @@ class Player {
   pawnsInStart() {
     let pawns = [];
     for (let pawn of this.pawns) {
-      if (pawn.col === this.startCol && pawn.row === this.startRow) {
+      if (pawn.row === this.startRow && pawn.col === this.startCol) {
         pawns.push(pawn);
       }
     }
@@ -437,7 +475,7 @@ class Player {
   }
 
   wins() {
-    alert( "Player " + COLORS[this.player] + " wins!")
+    alert( "Player " + COLORS[this.player] + " wins!");
   }
 }
 
@@ -536,12 +574,12 @@ class Deck {
     // Create base deck
     for (let i = 0; i < 4; i++) {
       this.cards.push(new StartMoveCard(1, false));
-      this.cards.push(new StartMoveCard(2, true));
-      this.cards.push(new MoveForwardCard(3));
+      //this.cards.push(new StartMoveCard(2, true));
+      //this.cards.push(new MoveForwardCard(3));
       //this.cards.push(new MoveBackwardCard(4));
       this.cards.push(new MoveForwardCard(5));
       //this.cards.push(new Card(7, 'Move forward 7 or split between two pawns.'));
-      this.cards.push(new MoveForwardCard(8));
+      //this.cards.push(new MoveForwardCard(8));
       //this.cards.push(new Card(10, 'Move forward 10 or move backward 1.'));
       //this.cards.push(new Card(11, 'Move forward 11 or change places with an opponent.'));
       this.cards.push(new MoveForwardCard(12));
@@ -562,13 +600,19 @@ class Deck {
       }
     }
   }
+
 }
 
 class Action {
-  constructor(pawn, endRow, endCol) {
+  constructor(pawn, endRow, endCol, adtnlMove) {
     this.pawn = pawn;
     this.endRow = endRow;
     this.endCol = endCol;
+    this.adtnlMove = adtnlMove;
+  }
+
+  followup() {
+    return this.adtnlMove;
   }
 }
 
